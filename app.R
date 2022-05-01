@@ -146,7 +146,7 @@ ui <- fluidPage(
             
            ##### TAB 3 : DATA FILTERING #####
            tabPanel("Filter",
-                filterPatternUI   
+                filterPatternUI
            )
            
            
@@ -155,7 +155,8 @@ ui <- fluidPage(
 
         #### MAIN PANEL ####
         mainPanel(
-            plotOutput('binPlot',
+            textOutput("sampleInfo"),
+            plotOutput("binPlot",
                        dblclick = "binPlot_dblclick",
                        brush = brushOpts(
                            id = "binPlot_brush",
@@ -180,10 +181,17 @@ server <- function(input, output, session) {
 #### 2) Current data table ####
     ### We create a "live" version of the data table with any extra info we may need
     dataLive<-reactive({
+      
+      # Initialize (full ds)  
+      current_data <- the_data
+      
+      # Filter the data based on filter input - if legal; otherwise do nothing.
+      try(
+        current_data <- the_data %>% filter(!!rlang::parse_expr(input$filterPattern)),
+        silent=T
+      )
         
-        ee<- the_data
-
-        return(ee)
+      return(current_data)
     }) 
     
 #### 3) Reactive variables ####
@@ -210,9 +218,15 @@ server <- function(input, output, session) {
     ## Alpha
     source("./components/alphaReactives.R",local=T)
     
-#### 4) The plot ####
-    #### Render the plot proper
+#### 4) Misc outputs ####
     
+    #### Filtering ####
+    output$sampleInfo<-renderText({
+      paste("Full dataset:",nrow(the_data),"; filtered:",nrow(dataLive() ) )
+    })
+
+#### 5) The plot ####
+
     output$binPlot <- renderPlot({
      #output$binPlot <- renderPlotly({
 
@@ -265,7 +279,7 @@ server <- function(input, output, session) {
         } else { (session$clientData$output_binPlot_width)*(7/16) }}
   )
 
-    #### 5) User interaction ####
+    #### 6) User interaction ####
     
     observeEvent(input$binPlot_dblclick, {
         brush <- input$binPlot_brush
