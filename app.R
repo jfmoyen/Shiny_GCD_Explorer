@@ -25,8 +25,18 @@ the_name <- "Granites Jacob et al. 21"
 # Another (best?) way would be to backtick every selection (with paste() ... )
 # But how would that play out with calculated values ? Badly, I think.
 
+# Add custom columns
+the_data %>% add_column(user_tag1=NA,
+                        user_tag2=NA,
+                        user_tag3=NA,
+                        user_tag4=NA,
+                        user_tag5=NA,
+                        selected=F) %>%
+  {.} -> the_data
+
 # Get "plottable" values
 discrete <- names(the_data)[!sapply(the_data,is.numeric)]
+discrete <- c(discrete,"user_tag1","user_tag2","user_tag3","user_tag4","user_tag5")
 continuous <- names(the_data)[sapply(the_data,is.numeric)]
 ## NB via selectize inputs it is possible to create new continuous variables, 
 # but probably not new discrete ones. We can expect "discrete" to be known and up-to-date
@@ -154,7 +164,7 @@ ui <- fluidPage(
         #### MAIN PANEL ####
         mainPanel(
             plotOutput('binPlot',
-                       dblclick = "binPlot_dblclick",
+                       dblclick = dblclickOpts(id = "binPlot_dblclick") ,
                        brush = brushOpts(
                            id = "binPlot_brush",
                            resetOnNew = TRUE)
@@ -216,7 +226,8 @@ server <- function(input, output, session) {
 
         # Build the plot
         p <- dataLive() %>% ggplot()+
-            geom_point(aes(x=!!rlang::parse_expr(input$X),y=!!rlang::parse_expr(input$Y),
+            geom_point(aes(x=!!rlang::parse_expr(input$X),
+                           y=!!rlang::parse_expr(input$Y),
                            color=!!colorMapping(),
                            shape=!!shapeMapping(),
                            size=!!sizeMapping(),
@@ -254,6 +265,9 @@ server <- function(input, output, session) {
         #### Facets ####
         p <- p + faceting()
         
+        #### Highlight selected ####
+        p <- p + highlights()
+        
         p
         #ggplotly(p)
 
@@ -264,6 +278,43 @@ server <- function(input, output, session) {
   )
 
     #### 5) User interaction ####
+    
+    # selectedPoints<-reactive({
+    #   brushedPoints(dataLive(),input$binPlot_brush)
+    # })
+    
+    ## NOT WORK And besides, particularly ugly - it is event programing not reactive
+    observeEvent(input$binPlot_brush, {
+      the_data$selected <<- brushedPoints(the_data,input$binPlot_brush,allRows=T)$selected_
+      browser()
+    })
+    
+    # hint:
+    # v <- reactiveValues(
+    #   selectedData = NULL
+    # )
+    # 
+    # observeEvent(input$plot_dbl, {
+    #   X1 <- nearPoints(iris, input$plot_dbl)
+    #   if (is.null(v$selectedData)) {
+    #     v$selectedData <- X1
+    #   } else {
+    #     if (nrow(merge(X1, v$selectedData)) > 0) {
+    #       ind <- anyDuplicated(rbind(v$selectedData, X1), fromLast=TRUE)
+    #       v$selectedData <- v$selectedData[-ind,]
+    #     } else {
+    #       v$selectedData <- rbind(v$selectedData, X1)
+    #     }
+    #   }
+    # })
+    
+    highlights<-reactive({
+      geom_point(data=dataLive() %>% filter(selected==TRUE),
+                 aes(x=!!rlang::parse_expr(input$X),y=!!rlang::parse_expr(input$Y)),
+                 color="yellow",
+                 size=5,
+                 alpha=0.5)
+    })
     
     observeEvent(input$binPlot_dblclick, {
         brush <- input$binPlot_brush
