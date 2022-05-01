@@ -1,0 +1,14 @@
+name: WR_data_explorer
+title: WR_data_explorer
+username:
+account: jfmoyen
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6193524
+bundleId: 5847904
+url: https://jfmoyen.shinyapps.io/WR_data_explorer/
+when: 1651168940.86011
+lastSyncTime: 1651168940.86011
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .RData
