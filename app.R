@@ -82,7 +82,7 @@ makeJSConditionString<-function(control,charvec,negate=F){
 #*************************#
 ####     DEFINE UI     ####
 #*************************#
-#*
+
 ### Import UI components
 
 source("./components/binaryPlotUI.R",local=T)
@@ -172,11 +172,9 @@ ui <- fluidPage(
 #### SERVER SIDE LOGIC ####
 #*************************#
 
-# Define server logic required to draw a histogram
 server <- function(input, output, session) {
 
 #### 1) Dynamic UI components ####
-
 
 #### 2) Current data table ####
     ### We create a "live" version of the data table with any extra info we may need
@@ -293,7 +291,6 @@ server <- function(input, output, session) {
             ranges$y <- NULL
         }
     })
-    
 }
 
 #*************************#
