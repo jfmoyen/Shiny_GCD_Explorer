@@ -94,6 +94,8 @@ source("./components/shapeControlUI.R",local=T)
 source("./components/sizeControlUI.R",local=T)
 source("./components/alphaControlUI.R",local=T)
 
+source("./components/filterControlUI.R",local=T)
+
 ### Make UI
 ui <- fluidPage(
 
@@ -144,7 +146,7 @@ ui <- fluidPage(
             
            ##### TAB 3 : DATA FILTERING #####
            tabPanel("Filter",
-                    
+                filterPatternUI   
            )
            
            
