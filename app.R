@@ -6,6 +6,7 @@ library(colourpicker)
 library(shinyWidgets)
 library(readxl)
 #library(shinyjs)
+library(ggiraph)
 
 ##### DEBUG
 reactlog::reactlog_enable()
@@ -156,12 +157,14 @@ ui <- fluidPage(
         #### MAIN PANEL ####
         mainPanel(
             textOutput("sampleInfo"),
-            plotOutput("binPlot",
-                       dblclick = "binPlot_dblclick",
-                       brush = brushOpts(
-                           id = "binPlot_brush",
-                           resetOnNew = TRUE)
-                       )
+            girafeOutput("binPlot")
+            
+            # plotOutput("binPlot",
+            #            dblclick = "binPlot_dblclick",
+            #            brush = brushOpts(
+            #                id = "binPlot_brush",
+            #                resetOnNew = TRUE)
+            #            )
             #plotlyOutput('binPlot')
         )
     ) ### End layout
@@ -225,12 +228,16 @@ server <- function(input, output, session) {
 
 #### 5) The plot ####
 
-    output$binPlot <- renderPlot({
+    #### Create ggplot object
+    
+    output$binPlot <- renderGirafe({
+     # output$binPlot <- renderPlot({
      #output$binPlot <- renderPlotly({
 
         # Build the plot
         p <- dataLive() %>% ggplot()+
-            geom_point(aes(x=!!rlang::parse_expr(input$X),
+            #geom_point(aes(x=!!rlang::parse_expr(input$X),
+            geom_point_interactive(aes(x=!!rlang::parse_expr(input$X),
                            y=!!rlang::parse_expr(input$Y),
                            color=!!colorMapping(),
                            shape=!!shapeMapping(),
@@ -269,28 +276,35 @@ server <- function(input, output, session) {
         #### Facets ####
         p <- p + faceting()
         
-        p
+       # p 
+        girafe(ggobj=p,
+               options = list(opts_zoom(min=1,max=5))
+               )
+        })
+    
         #ggplotly(p)
 
-    },height = function() {
-        if (session$clientData$output_binPlot_width <= 1500) {
-            (session$clientData$output_binPlot_width)*(3/4)
-        } else { (session$clientData$output_binPlot_width)*(7/16) }}
-  )
+    
+    # },height = function() {
+    #     if (session$clientData$output_binPlot_width <= 1500) {
+    #         (session$clientData$output_binPlot_width)*(3/4)
+    #     } else { (session$clientData$output_binPlot_width)*(7/16) }}
+  
+
 
     #### 6) User interaction ####
     
-    observeEvent(input$binPlot_dblclick, {
-        brush <- input$binPlot_brush
-        if (!is.null(brush)) {
-            ranges$x <- c(brush$xmin, brush$xmax)
-            ranges$y <- c(brush$ymin, brush$ymax)
-            
-        } else {
-            ranges$x <- NULL
-            ranges$y <- NULL
-        }
-    })
+    # observeEvent(input$binPlot_dblclick, {
+    #     brush <- input$binPlot_brush
+    #     if (!is.null(brush)) {
+    #         ranges$x <- c(brush$xmin, brush$xmax)
+    #         ranges$y <- c(brush$ymin, brush$ymax)
+    #         
+    #     } else {
+    #         ranges$x <- NULL
+    #         ranges$y <- NULL
+    #     }
+    # })
 }
 
 #*************************#
