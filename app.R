@@ -214,8 +214,19 @@ server <- function(input, output, session) {
                        choices=c(" ",names(v$userTags)),
                        selected=" ",
                        options = list(create = TRUE)),
-        textInput("tag_val",
-                  "Value:"),
+        selectizeInput("tag_val",
+                       "Value:",
+                       choices= tryCatch(
+                                v$userTags %>% 
+                                pull(input$tag_col) %>% 
+                                unique() %>%
+                                c(" ") , 
+                                error=function(cond){" "}
+                       ),
+                       selected=" ",
+                       options = list(create = TRUE)),
+        # textInput("tag_val",
+        #           "Value:"),
         actionButton("tag_do",paste("Tag", selectedSamples(), "samples" ))
       )
       
