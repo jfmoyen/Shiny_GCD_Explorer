@@ -25,18 +25,18 @@ the_name <- "Granites Jacob et al. 21"
 # Another (best?) way would be to backtick every selection (with paste() ... )
 # But how would that play out with calculated values ? Badly, I think.
 
-# Add custom columns
-the_data %>% add_column(user_tag1=NA,
-                        user_tag2=NA,
-                        user_tag3=NA,
-                        user_tag4=NA,
-                        user_tag5=NA,
-                        selected=F) %>%
-  {.} -> the_data
+# # Add custom columns
+# the_data %>% add_column(user_tag1=NA,
+#                         user_tag2=NA,
+#                         user_tag3=NA,
+#                         user_tag4=NA,
+#                         user_tag5=NA,
+#                         selected=F) %>%
+#   {.} -> the_data
 
 # Get "plottable" values
 discrete <- names(the_data)[!sapply(the_data,is.numeric)]
-discrete <- c(discrete,"user_tag1","user_tag2","user_tag3","user_tag4","user_tag5")
+#discrete <- c(discrete,"user_tag1","user_tag2","user_tag3","user_tag4","user_tag5")
 continuous <- names(the_data)[sapply(the_data,is.numeric)]
 ## NB via selectize inputs it is possible to create new continuous variables, 
 # but probably not new discrete ones. We can expect "discrete" to be known and up-to-date
@@ -150,7 +150,7 @@ ui <- fluidPage(
                 #### Alpha section ####
                 alphaMappingUI,
                 alphaAdjustmentUI,
-                alphaRangeUI,
+                alphaRangeUI
 
             ), ### end of tab "aeshetics"
             
@@ -172,7 +172,6 @@ ui <- fluidPage(
                            id = "binPlot_brush",
                            resetOnNew = FALSE)
                        )
-            #plotlyOutput('binPlot')
         )
     ) ### End layout
 
@@ -236,7 +235,6 @@ server <- function(input, output, session) {
 #### 5) The plot ####
 
     output$binPlot <- renderPlot({
-     #output$binPlot <- renderPlotly({
 
         # Build the plot
         p <- dataLive() %>% ggplot()+
@@ -283,7 +281,6 @@ server <- function(input, output, session) {
         p <- p + highlights()
         
         p
-        #ggplotly(p)
 
     },height = function() {
         if (session$clientData$output_binPlot_width <= 1500) {
@@ -291,7 +288,6 @@ server <- function(input, output, session) {
         } else { (session$clientData$output_binPlot_width)*(7/16) }}
   )
 
-<<<<<<< HEAD
     #### 6) User interaction ####
 
     #### Keep track of selected points ####
@@ -311,7 +307,6 @@ server <- function(input, output, session) {
       v$selectedData <- brushedPoints(the_data,input$binPlot_brush,allRows=F)
       
       ## Keep track of rectangle size
-      # if you want it to be done, you have to do it yourself !
       if (!is.null(input$binPlot_brush)) {
         lastBrush$x <- c(input$binPlot_brush$xmin, input$binPlot_brush$xmax)
         lastBrush$y <- c(input$binPlot_brush$ymin, input$binPlot_brush$ymax)
@@ -322,8 +317,7 @@ server <- function(input, output, session) {
      })
 
     observeEvent(input$binPlot_dblclick, {
-     # if(is.null(binPlot_brush)){return()}
-      
+
       ranges$x <- lastBrush$x
       ranges$y <- lastBrush$y
       
