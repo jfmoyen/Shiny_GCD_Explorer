@@ -156,12 +156,12 @@ ui <- fluidPage(
             
            ##### TAB 3 : DATA FILTERING #####
            tabPanel("Filter",
-                filterPatternUI
+                filterPatternUI,
+                uiOutput("tagBox")
            )
-           
-           
-        ) ### End of sidebarPanel
-), ### end of tabset
+
+            ) ### end of tabset
+        ), ### End of sidebarPanel
 
         #### MAIN PANEL ####
         mainPanel(
@@ -200,6 +200,28 @@ server <- function(input, output, session) {
         
       return(current_data)
     }) 
+
+#### Tags ####
+    
+    output$tagBox <- renderUI({
+      
+      if(is.null(selectedSamples())){return(NULL)}
+      
+      tagList(
+        hr(style = "border-top: 1px solid #000000;"),
+        selectizeInput("tag_col",
+                       "Tag to set or update:",
+                       choices=c(" ",names(v$userTags)),
+                       selected=" ",
+                       options = list(create = TRUE)),
+        textInput("tag_val",
+                  "Value:"),
+        actionButton("tag_do",paste("Tag", selectedSamples(), "samples" ))
+      )
+      
+    })
+    
+
     
 #### 3) Reactive variables ####
     
@@ -227,11 +249,13 @@ server <- function(input, output, session) {
     
 #### 4) Misc outputs ####
     
-    #### Filtering ####
+    selectedSamples <- reactive({ nrow(v$selectedData) })
+
+    #### Title bar ####
     output$sampleInfo<-renderText({
       paste("Full dataset:",nrow(the_data),
             "; filtered:",nrow(dataLive() ),
-            "; selected:",nrow(v$selectedData) )
+            "; selected:",selectedSamples() )
     })
 
 #### 5) The plot ####
@@ -294,7 +318,8 @@ server <- function(input, output, session) {
 
     #### Keep track of selected points ####
     v <- reactiveValues(
-      selectedData = NULL
+      selectedData = NULL,
+      userTags = NULL
     )
     
     #### Keep track of the last brush rectangle ####
