@@ -229,7 +229,9 @@ server <- function(input, output, session) {
     
     #### Filtering ####
     output$sampleInfo<-renderText({
-      paste("Full dataset:",nrow(the_data),"; filtered:",nrow(dataLive() ) )
+      paste("Full dataset:",nrow(the_data),
+            "; filtered:",nrow(dataLive() ),
+            "; selected:",nrow(v$selectedData) )
     })
 
 #### 5) The plot ####
