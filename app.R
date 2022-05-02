@@ -293,6 +293,18 @@ server <- function(input, output, session) {
     #### Tags ####
     # Most of the tag work is done only upon clicking the button !
 
+    observeEvent(input$tag_do,{
+      # See if the column exists
+      # browser()
+      
+      # Update the col in the right place
+      # --> we first need to create UIDs !!! (as we know from SQL, hey ?)
+      
+      # housekeeping (taglist etc)
+      
+      # update the input widgets to reflect these changes
+      
+    })
     
     
 #### 5) The plot ####
@@ -364,9 +376,9 @@ server <- function(input, output, session) {
     observeEvent(input$binPlot_brush, {
 
       ## Keep track of selected points
-      v$selectedData <- brushedPoints(the_data,input$binPlot_brush,allRows=F)
+      v$selectedData <- brushedPoints(dataLive(),input$binPlot_brush,allRows=F)
       
-      ## Keep track of rectangle size
+     ## Keep track of rectangle size
       if (!is.null(input$binPlot_brush)) {
         lastBrush$x <- c(input$binPlot_brush$xmin, input$binPlot_brush$xmax)
         lastBrush$y <- c(input$binPlot_brush$ymin, input$binPlot_brush$ymax)
