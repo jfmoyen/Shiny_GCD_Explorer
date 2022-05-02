@@ -106,6 +106,8 @@ source("./components/alphaControlUI.R",local=T)
 
 source("./components/filterControlUI.R",local=T)
 
+source("./components/alphaModule.R",local=T)
+
 ### Make UI
 ui <- fluidPage(
 
@@ -148,9 +150,10 @@ ui <- fluidPage(
                 hr(style = "border-top: 1px solid #000000;"),
             
                 #### Alpha section ####
-                alphaMappingUI,
-                alphaAdjustmentUI,
-                alphaRangeUI
+                # alphaMappingUI,
+                # alphaAdjustmentUI,
+                # alphaRangeUI
+                alphaUI("alphaControls")
 
             ), ### end of tab "aeshetics"
             
@@ -223,7 +226,8 @@ server <- function(input, output, session) {
     source("./components/sizeReactives.R",local=T)
     
     ## Alpha
-    source("./components/alphaReactives.R",local=T)
+    #source("./components/alphaReactives.R",local=T)
+    alpha<-alphaServer("alphaControls")
     
 #### 4) Misc outputs ####
     
@@ -243,7 +247,7 @@ server <- function(input, output, session) {
                            color=!!colorMapping(),
                            shape=!!shapeMapping(),
                            size=!!sizeMapping(),
-                           alpha=!!alphaMapping() ))+
+                           alpha=!!alpha$mapping ))+
             
         #### Axes ####    
             scale_x_continuous()+
@@ -272,7 +276,7 @@ server <- function(input, output, session) {
         p <- p + sizeScale()
 
         ## Alpha
-        p <- p + alphaScale()
+        p <- p + alpha$scale
 
         #### Facets ####
         p <- p + faceting()
