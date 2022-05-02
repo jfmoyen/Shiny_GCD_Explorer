@@ -48,6 +48,15 @@ continuous <- names(the_data)[sapply(the_data,is.numeric)]
 # Major elements (would be nice to grab from GCDkit !)
 # mjrs <- c("SiO2", "Al2O3","TiO2","FeO","FeOt","MgO","Fe2O3","Fe2O3t","MnO","CaO","Na2O","K2O","P2O5")
 
+
+## Initial tagging conditions
+# A table (of the same shape as the whole dataset) with the user-defined tag columns
+userTags_0 <- tibble(user_tag1=rep(NA,nrow(the_data)) )
+
+# Keep a record of the latest selected tag, for convenience
+lastUsedTag_0 <- "user_tag1"
+lastUsedVal_0 <- "My value"
+
 #*************************#
 ####     UTILITIES     ####
 #*************************#
@@ -154,10 +163,24 @@ ui <- fluidPage(
 
             ), ### end of tab "aeshetics"
             
-           ##### TAB 3 : DATA FILTERING #####
+           ##### TAB 3 : DATA FILTERING AND TAGGING #####
            tabPanel("Filter",
                 filterPatternUI,
-                uiOutput("tagBox")
+                conditionalPanel(condition="output.showTagBox == 'TRUE' ",
+                hr(style = "border-top: 1px solid #000000;"),
+                selectizeInput("tag_col",
+                               "Tag to set or update:",
+                               choices=names(userTags_0),
+                               selected=lastUsedTag_0,
+                               options = list(create = TRUE)),
+                selectizeInput("tag_val",
+                               "Value:",
+                               choices = lastUsedVal_0,
+                               selected = lastUsedVal_0,
+                               options = list(create = TRUE)),
+
+                actionButton("tag_do","Nothing to tag")
+                )
            )
 
             ) ### end of tabset
@@ -165,8 +188,10 @@ ui <- fluidPage(
 
         #### MAIN PANEL ####
         mainPanel(
+    
             textOutput("sampleInfo"),
             plotOutput("binPlot",
+                       click = "binPlot_click",
                        dblclick = "binPlot_dblclick",
                        brush = brushOpts(
                            id = "binPlot_brush",
@@ -201,39 +226,17 @@ server <- function(input, output, session) {
       return(current_data)
     }) 
 
-#### Tags ####
-    
-    output$tagBox <- renderUI({
+
       
-      if(is.null(selectedSamples())){return(NULL)}
-      
-      tagList(
-        hr(style = "border-top: 1px solid #000000;"),
-        selectizeInput("tag_col",
-                       "Tag to set or update:",
-                       choices=c(" ",names(v$userTags)),
-                       selected=" ",
-                       options = list(create = TRUE)),
-        selectizeInput("tag_val",
-                       "Value:",
-                       choices= tryCatch(
-                                v$userTags %>% 
-                                pull(input$tag_col) %>% 
-                                unique() %>%
-                                c(" ") , 
-                                error=function(cond){" "}
-                       ),
-                       selected=" ",
-                       options = list(create = TRUE)),
-        # textInput("tag_val",
-        #           "Value:"),
-        actionButton("tag_do",paste("Tag", selectedSamples(), "samples" ))
-      )
-      
-    })
+    # # A table (of the same shape as the whole dataset) with the user-defined tag columns
+    # userTags = tibble(user_tag1=rep(NA,nrow(the_data)) ),
+    # 
+    # # Keep a record of the latest selected tag, for convenience
+    # lastUsedTag = "user_tag1",
+    # lastUsedVal = "My value"
     
 
-    
+    #paste("Tag", selectedSamples(), "samples" )
 #### 3) Reactive variables ####
     
     #### Scaling info ####
@@ -260,8 +263,20 @@ server <- function(input, output, session) {
     
 #### 4) Misc outputs ####
     
+    # State variables
+    #### Keep track of selected points ####
+    v <- reactiveValues(
+      # A sub-table that contains the samples currently selected
+      selectedData = NULL,
+    )
+    
+    # Count selected samples
     selectedSamples <- reactive({ nrow(v$selectedData) })
 
+    ## Controller for the tagging UI
+    output$showTagBox <- reactive({ as.character(selectedSamples()>0) })
+    outputOptions(output, 'showTagBox', suspendWhenHidden = FALSE)
+    
     #### Title bar ####
     output$sampleInfo<-renderText({
       paste("Full dataset:",nrow(the_data),
@@ -269,6 +284,11 @@ server <- function(input, output, session) {
             "; selected:",selectedSamples() )
     })
 
+    #### Tags ####
+    
+
+    
+    
 #### 5) The plot ####
 
     output$binPlot <- renderPlot({
@@ -327,11 +347,7 @@ server <- function(input, output, session) {
 
     #### 6) User interaction ####
 
-    #### Keep track of selected points ####
-    v <- reactiveValues(
-      selectedData = NULL,
-      userTags = NULL
-    )
+
     
     #### Keep track of the last brush rectangle ####
     # NB- because the brush is reset with each graph redraw !
@@ -365,6 +381,11 @@ server <- function(input, output, session) {
       session$resetBrush("binPlot_brush")
     })
 
+    observeEvent(input$binPlot_click,{
+      # pass
+      # this has the side effect of clearing the brush !
+    })
+    
     
     highlights<-reactive({
       if(is.null(v$selectedData)){return(NULL)}
