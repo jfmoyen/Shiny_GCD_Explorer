@@ -279,15 +279,19 @@ server <- function(input, output, session) {
 
     #### 5) User interaction ####
     
-    # selectedPoints<-reactive({
+    # selectedPoints<-reactiveValues({
     #   brushedPoints(dataLive(),input$binPlot_brush)
     # })
     
+    v <- reactiveValues(
+      selectedData = NULL
+    )
+    
     ## NOT WORK And besides, particularly ugly - it is event programing not reactive
     observeEvent(input$binPlot_brush, {
-      the_data$selected <<- brushedPoints(the_data,input$binPlot_brush,allRows=T)$selected_
-      browser()
-    })
+      #the_data$selected <<- brushedPoints(the_data,input$binPlot_brush,allRows=T)$selected_
+      v$selectedData <- brushedPoints(the_data,input$binPlot_brush,allRows=F)
+     })
     
     # hint:
     # v <- reactiveValues(
@@ -309,10 +313,10 @@ server <- function(input, output, session) {
     # })
     
     highlights<-reactive({
-      geom_point(data=dataLive() %>% filter(selected==TRUE),
+      geom_point(data=v$selectedData,
                  aes(x=!!rlang::parse_expr(input$X),y=!!rlang::parse_expr(input$Y)),
                  color="yellow",
-                 size=5,
+                 size=2*max(input$size_adj,input$size_rng,na.rm=T), ## CAN BE IMPROVED !
                  alpha=0.5)
     })
     
