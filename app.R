@@ -167,7 +167,7 @@ ui <- fluidPage(
                        dblclick = dblclickOpts(id = "binPlot_dblclick") ,
                        brush = brushOpts(
                            id = "binPlot_brush",
-                           resetOnNew = TRUE)
+                           resetOnNew = FALSE)
                        )
             #plotlyOutput('binPlot')
         )
@@ -278,60 +278,57 @@ server <- function(input, output, session) {
   )
 
     #### 5) User interaction ####
-    
-    # selectedPoints<-reactiveValues({
-    #   brushedPoints(dataLive(),input$binPlot_brush)
-    # })
-    
+
+    #### Keep track of selected points ####
     v <- reactiveValues(
       selectedData = NULL
     )
     
-    ## NOT WORK And besides, particularly ugly - it is event programing not reactive
+    #### Keep track of the last brush rectangle ####
+    # NB- because the brush is reset with each graph redraw !
+    # Which we cannot really avoid least we have ghost rectangles floating around...
+    
+    lastBrush <- reactiveValues(x = NULL, y = NULL)
+    
     observeEvent(input$binPlot_brush, {
-      #the_data$selected <<- brushedPoints(the_data,input$binPlot_brush,allRows=T)$selected_
+
+      ## Keep track of selected points
       v$selectedData <- brushedPoints(the_data,input$binPlot_brush,allRows=F)
+      
+      ## Keep track of rectangle size
+      # if you want it to be done, you have to do it yourself !
+      if (!is.null(input$binPlot_brush)) {
+        lastBrush$x <- c(input$binPlot_brush$xmin, input$binPlot_brush$xmax)
+        lastBrush$y <- c(input$binPlot_brush$ymin, input$binPlot_brush$ymax)
+      } else {
+        lastBrush$x <- NULL
+        lastBrush$y <- NULL
+      }
      })
     
-    # hint:
-    # v <- reactiveValues(
-    #   selectedData = NULL
-    # )
-    # 
-    # observeEvent(input$plot_dbl, {
-    #   X1 <- nearPoints(iris, input$plot_dbl)
-    #   if (is.null(v$selectedData)) {
-    #     v$selectedData <- X1
-    #   } else {
-    #     if (nrow(merge(X1, v$selectedData)) > 0) {
-    #       ind <- anyDuplicated(rbind(v$selectedData, X1), fromLast=TRUE)
-    #       v$selectedData <- v$selectedData[-ind,]
-    #     } else {
-    #       v$selectedData <- rbind(v$selectedData, X1)
-    #     }
-    #   }
-    # })
+    observeEvent(input$binPlot_dblclick, {
+     # if(is.null(binPlot_brush)){return()}
+      
+      ranges$x <- lastBrush$x
+      ranges$y <- lastBrush$y
+      
+      lastBrush$x <- NULL
+      lastBrush$y <- NULL
+      
+      session$resetBrush("binPlot_brush")
+    })
     
     highlights<-reactive({
+      if(is.null(v$selectedData)){return(NULL)}
+      
       geom_point(data=v$selectedData,
                  aes(x=!!rlang::parse_expr(input$X),y=!!rlang::parse_expr(input$Y)),
+                 ### Shape ?
                  color="yellow",
                  size=2*max(input$size_adj,input$size_rng,na.rm=T), ## CAN BE IMPROVED !
                  alpha=0.5)
     })
-    
-    observeEvent(input$binPlot_dblclick, {
-        brush <- input$binPlot_brush
-        if (!is.null(brush)) {
-            ranges$x <- c(brush$xmin, brush$xmax)
-            ranges$y <- c(brush$ymin, brush$ymax)
-            
-        } else {
-            ranges$x <- NULL
-            ranges$y <- NULL
-        }
-    })
-    
+   
 }
 
 #*************************#
