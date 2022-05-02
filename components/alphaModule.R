@@ -1,5 +1,7 @@
-alphaUI <- function(id){
+alphaUI <- function(id,continuous){
   
+  ns <- NS(id)
+  tagList(
   alphaMappingUI <- fluidRow(
     column(8,
            selectizeInput(NS(id,"alpha_by"),
@@ -11,39 +13,41 @@ alphaUI <- function(id){
     
     column(4,
            conditionalPanel(
-             condition = "input.alpha_by != 'nothing' ", ## This is a js condition not R syntax !
+             condition = "input.alpha_by != 'nothing' ", ns=ns, ## This is a js condition not R syntax !
              checkboxInput(NS(id,"alpha_literal"), "Col already contains Opacity")
            )
-    ))
+    )),
   
   alphaAdjustmentUI <- conditionalPanel(
-    condition = "input.alpha_by == 'nothing'", ## This is a js condition not R syntax !
+    condition = "input.alpha_by == 'nothing'", ns=ns, ## This is a js condition not R syntax !
     sliderInput(NS(id,"alpha_adj"),
                 "",
                 value=0.9,
                 min=0,max=1)
-  )
+  ),
   
   alphaRangeUI <- conditionalPanel(
-    condition = "input.alpha_by != 'nothing'  && !input.alpha_literal ", ## This is a js condition not R syntax !
+    condition = "input.alpha_by != 'nothing'  && !input.alpha_literal ", ns=ns, ## This is a js condition not R syntax !
     sliderInput(NS(id,"alpha_rng"),
                 "",
                 value=c(0.4,1),
                 min=0,max=1)
   )
+  )
 }
 
 alphaServer <- function(id) {
   moduleServer(id, function(input, output, session) {
-    alphaMapping<- reactive({
+    
+    list(mapping = reactive({
+      
       if(input$alpha_by=="nothing"){
         input$alpha_adj
       }else{
         rlang::parse_expr(input$alpha_by)
       }
-    })
-    
-    alphaScale<-reactive({
+    }),
+    scale=reactive({
       if(input$alpha_literal || input$alpha_by=="nothing"){
         retval <- scale_alpha_identity(guide="none")
       }else{
@@ -56,12 +60,8 @@ alphaServer <- function(id) {
       
       return(retval)
     })
-    
-    
-    return(list(
-      mapping=alphaMapping(),
-      scale=alphaScale()
-    ))
+  )
+
   })
 }
 

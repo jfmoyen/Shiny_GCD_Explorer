@@ -102,7 +102,7 @@ source("./components/facetControlUI.R",local=T)
 source("./components/colorControlUI.R",local=T)
 source("./components/shapeControlUI.R",local=T)
 source("./components/sizeControlUI.R",local=T)
-source("./components/alphaControlUI.R",local=T)
+#source("./components/alphaControlUI.R",local=T)
 
 source("./components/filterControlUI.R",local=T)
 
@@ -153,7 +153,7 @@ ui <- fluidPage(
                 # alphaMappingUI,
                 # alphaAdjustmentUI,
                 # alphaRangeUI
-                alphaUI("alphaControls")
+                alphaUI("alphaControls",continuous)
 
             ), ### end of tab "aeshetics"
             
@@ -247,7 +247,7 @@ server <- function(input, output, session) {
                            color=!!colorMapping(),
                            shape=!!shapeMapping(),
                            size=!!sizeMapping(),
-                           alpha=!!alpha$mapping ))+
+                           alpha=!!alpha$mapping() ))+
             
         #### Axes ####    
             scale_x_continuous()+
@@ -276,7 +276,7 @@ server <- function(input, output, session) {
         p <- p + sizeScale()
 
         ## Alpha
-        p <- p + alpha$scale
+        p <- p + alpha$scale()
 
         #### Facets ####
         p <- p + faceting()
