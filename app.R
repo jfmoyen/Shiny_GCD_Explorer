@@ -168,6 +168,7 @@ ui <- fluidPage(
                 filterPatternUI,
                 conditionalPanel(condition="output.showTagBox == 'TRUE' ",
                 hr(style = "border-top: 1px solid #000000;"),
+                htmlOutput("tagBoxTitle",class="h4"),
                 selectizeInput("tag_col",
                                "Tag to set or update:",
                                choices=names(userTags_0),
@@ -179,7 +180,7 @@ ui <- fluidPage(
                                selected = lastUsedVal_0,
                                options = list(create = TRUE)),
 
-                actionButton("tag_do","Nothing to tag")
+                actionButton("tag_do","Tag selected")
                 )
            )
 
@@ -273,6 +274,11 @@ server <- function(input, output, session) {
     # Count selected samples
     selectedSamples <- reactive({ nrow(v$selectedData) })
 
+    ## Tag box title
+    output$tagBoxTitle<-renderUI({
+      paste("Tag",selectedSamples(),"samples using:")
+    })
+    
     ## Controller for the tagging UI
     output$showTagBox <- reactive({ as.character(selectedSamples()>0) })
     outputOptions(output, 'showTagBox', suspendWhenHidden = FALSE)
@@ -285,7 +291,7 @@ server <- function(input, output, session) {
     })
 
     #### Tags ####
-    
+    # Most of the tag work is done only upon clicking the button !
 
     
     
