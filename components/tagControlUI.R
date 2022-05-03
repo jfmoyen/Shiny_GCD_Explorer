@@ -8,12 +8,12 @@ tagUI <- conditionalPanel(condition="output.showTagBox == 'TRUE' ",
                                 choices=names(userTags_0),
                                 selected=lastUsedTag_0,
                                 options = list(create = TRUE)),
-                 
+                 textOutput("tagBoxError"),
                  selectizeInput("tag_val",
                                 "Value:",
                                 choices = lastUsedVal_0,
                                 selected = lastUsedVal_0,
                                 options = list(create = TRUE)),
-                 
-                 actionButton("tag_do","Tag selected")
+                 uiOutput("doTagButton")
+                 #actionButton("tag_do","Tag selected")
 )
