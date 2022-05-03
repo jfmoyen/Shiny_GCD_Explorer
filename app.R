@@ -19,7 +19,12 @@ reactlog::reactlog_enable()
 #                       escape_double = FALSE, trim_ws = TRUE)
 # the_name <- "Atacazo"
 
-the_data <- read_excel("Classif_Var_LFB_NA.xlsx",.name_repair="universal") %>% sample_frac(1/10)
+the_data <- read_excel("Classif_Var_LFB_NA.xlsx",.name_repair="universal") %>% 
+  sample_frac(1/10) %>% 
+  rowid_to_column("ID") 
+  
+
+
 the_name <- "Granites Jacob et al. 21"
 ## Names are replaced by "syntaxic" names. This is a hassle for A/CNK etc but makes life generally easier
 # Another (best?) way would be to backtick every selection (with paste() ... )
@@ -250,7 +255,7 @@ server <- function(input, output, session) {
     source("./components/facetReactives.R",local=T)
 
     #### Aesthetics ####
-    # All of the following return a *Mappting() and a *Scale() value
+    # All of the following return a *Mappting() and a *Scale() reactive
     # to be used in plot
     
     ## Colour 
@@ -287,7 +292,7 @@ server <- function(input, output, session) {
     outputOptions(output, 'showTagBox', suspendWhenHidden = FALSE)
     
     observeEvent(input$tag_do,{
-      # See if the column exists
+      # See if the column exists in tagList - if not, create it
       # browser()
       
       # Update the col in the right place
