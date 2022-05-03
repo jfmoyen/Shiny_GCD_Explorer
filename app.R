@@ -119,7 +119,7 @@ source("./components/sizeControlUI.R",local=T)
 source("./components/alphaControlUI.R",local=T)
 
 source("./components/filterControlUI.R",local=T)
-source("./components/tagControlUI.R",local=T)
+#source("./components/tagControlUI.R",local=T)
 
 ### Make UI
 ui <- fluidPage(
@@ -171,8 +171,8 @@ ui <- fluidPage(
             
            ##### TAB 3 : DATA FILTERING AND TAGGING #####
            tabPanel("Filter",
-                filterPatternUI,
-                tagUI
+                filterPatternUI
+                #tagUI
                 )
 
             ) ### end of tabset
@@ -262,7 +262,7 @@ server <- function(input, output, session) {
     #### Tags ####
     ## Tag box title
     
-    source("./components/tagReactives.R",local=T)
+    #source("./components/tagReactives.R",local=T)
     
 #### 5) The plot ####
     
