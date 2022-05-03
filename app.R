@@ -119,6 +119,7 @@ source("./components/sizeControlUI.R",local=T)
 source("./components/alphaControlUI.R",local=T)
 
 source("./components/filterControlUI.R",local=T)
+source("./components/tagControlUI.R",local=T)
 
 ### Make UI
 ui <- fluidPage(
@@ -171,23 +172,8 @@ ui <- fluidPage(
            ##### TAB 3 : DATA FILTERING AND TAGGING #####
            tabPanel("Filter",
                 filterPatternUI,
-                conditionalPanel(condition="output.showTagBox == 'TRUE' ",
-                hr(style = "border-top: 1px solid #000000;"),
-                htmlOutput("tagBoxTitle",class="h4"),
-                selectizeInput("tag_col",
-                               "Tag to set or update:",
-                               choices=names(userTags_0),
-                               selected=lastUsedTag_0,
-                               options = list(create = TRUE)),
-                selectizeInput("tag_val",
-                               "Value:",
-                               choices = lastUsedVal_0,
-                               selected = lastUsedVal_0,
-                               options = list(create = TRUE)),
-
-                actionButton("tag_do","Tag selected")
+                tagUI
                 )
-           )
 
             ) ### end of tabset
         ), ### End of sidebarPanel
@@ -227,18 +213,10 @@ server <- function(input, output, session) {
   # Ultimately, this will be combined with the original data to generate a plottingData table
   
   ## Keep track of selected points
-  v <- reactiveValues(
+  dataProcessing <- reactiveValues(
     # A sub-table that contains the samples currently selected
-    selectedData = NULL,
+    selectedData = NULL)
     
-    # A table (of the same length as the whole dataset) with the user-defined tag columns
-    userTags = tibble(user_tag1=rep(NA,nrow(the_data)) ),
-     
-    # Keep a record of the latest selected tag (and last-used value), for convenience
-    lastUsedTag = "user_tag1",
-    lastUsedVal = "My value"
-  )
-  
   #### Manual override for the scale of the graph ####
   ranges <- reactiveValues(x = NULL, y = NULL)
 
@@ -246,11 +224,11 @@ server <- function(input, output, session) {
   
     #### Some useful variables to keep track of ####
     # Count selected samples
-    selectedSamplesCount <- reactive({ nrow(v$selectedData) })
+    selectedSamplesCount <- reactive({ nrow(dataProcessing$selectedData) })
   
     #### Facetting ####
     # This yields a facetting() reactive (to be used in plot)
-    # also updates some of the input widgetes (in faceting)
+    # also updates some of the input widgets (in faceting)
   
     source("./components/facetReactives.R",local=T)
 
@@ -272,11 +250,6 @@ server <- function(input, output, session) {
     
     #### Text outputs ####
    
-    ## Tag box title
-    output$tagBoxTitle<-renderUI({
-      paste("Tag",selectedSamplesCount(),"samples using:")
-    })
-
     ## Graph title bar
     output$sampleInfo<-renderText({
       paste("Full dataset:",nrow(the_data),
@@ -284,28 +257,12 @@ server <- function(input, output, session) {
             "; selected:",selectedSamplesCount() )
     })
 
+    #### Tagging ####
+
     #### Tags ####
-    # Most of the tag work is done only upon clicking the button !
+    ## Tag box title
     
-    ## Controller for the tagging UI
-    output$showTagBox <- reactive({ as.character(selectedSamplesCount()>0) })
-    outputOptions(output, 'showTagBox', suspendWhenHidden = FALSE)
-    
-    observeEvent(input$tag_do,{
-      # See if the column exists in tagList - if not, create it
-      # browser()
-      
-      # Update the col in the right place
-      # --> we first need to create UIDs !!! (as we know from SQL, hey ?)
-      
-      # housekeeping (taglist etc)
-      
-      # update the input widgets to reflect these changes
-      # in particuar all the aesthetic ones !
-      # also the ones for tagging
-      
-    })
-    
+    source("./components/tagReactives.R",local=T)
     
 #### 5) The plot ####
     
@@ -389,7 +346,7 @@ server <- function(input, output, session) {
     observeEvent(input$binPlot_brush, {
 
       ## Keep track of selected points
-      v$selectedData <- brushedPoints(plottingData(),input$binPlot_brush,allRows=F)
+      dataProcessing$selectedData <- brushedPoints(plottingData(),input$binPlot_brush,allRows=F)
       
      ## Keep track of rectangle size
       if (!is.null(input$binPlot_brush)) {
@@ -420,9 +377,9 @@ server <- function(input, output, session) {
     ## Add some hover code here ! 
     
     highlights<-reactive({
-      if(is.null(v$selectedData)){return(NULL)}
+      if(is.null(dataProcessing$selectedData)){return(NULL)}
       
-      geom_point(data=v$selectedData,
+      geom_point(data=dataProcessing$selectedData,
                  aes(x=!!rlang::parse_expr(input$X),y=!!rlang::parse_expr(input$Y)),
                  ### Shape ?
                  color="yellow",
