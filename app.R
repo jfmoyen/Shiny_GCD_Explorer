@@ -209,46 +209,49 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
 
-#### 1) Dynamic UI components ####
-
-#### 2) Current data table ####
-    ### We create a "live" version of the data table with any extra info we may need
-    dataLive<-reactive({
-      
-      # Initialize (full ds)  
-      current_data <- the_data
-      
-      # Filter the data based on filter input - if legal; otherwise do nothing.
-      try(
-        current_data <- the_data %>% filter(!!rlang::parse_expr(input$filterPattern)),
-        silent=T
-      )
-        
-      return(current_data)
-    }) 
-
-
-      
-    # # A table (of the same shape as the whole dataset) with the user-defined tag columns
-    # userTags = tibble(user_tag1=rep(NA,nrow(the_data)) ),
-    # 
-    # # Keep a record of the latest selected tag, for convenience
-    # lastUsedTag = "user_tag1",
-    # lastUsedVal = "My value"
+#### 1) State variables ####
+  
+  # These variables record the "state" of the application.
+  # They are things that must be modified only once, upon specific actions
+  # rather than kept permanently up-do-date, so they are not fed by the reactive graph
+  # Instead, we modify them manually, upon certain user actions (click...)
+  # via observeEvents()
+  # In a shiny context, this is dangerous...
+  
+  #### information on data ####
+  # Ultimately, this will be combined with the original data to generate a plottingData table
+  
+  ## Keep track of selected points
+  v <- reactiveValues(
+    # A sub-table that contains the samples currently selected
+    selectedData = NULL,
     
+    # A table (of the same length as the whole dataset) with the user-defined tag columns
+    userTags = tibble(user_tag1=rep(NA,nrow(the_data)) ),
+     
+    # Keep a record of the latest selected tag (and last-used value), for convenience
+    lastUsedTag = "user_tag1",
+    lastUsedVal = "My value"
+  )
+  
+  #### Manual override for the scale of the graph ####
+  ranges <- reactiveValues(x = NULL, y = NULL)
 
-    #paste("Tag", selectedSamples(), "samples" )
-#### 3) Reactive variables ####
-    
-    #### Scaling info ####
-    ranges <- reactiveValues(x = NULL, y = NULL)
-    
+#### 2) Reactive expressions - plumbing ####
+  
+    #### Some useful variables to keep track of ####
+    # Count selected samples
+    selectedSamplesCount <- reactive({ nrow(v$selectedData) })
+  
     #### Facetting ####
+    # This yields a facetting() reactive (to be used in plot)
+    # also updates some of the input widgetes (in faceting)
+  
     source("./components/facetReactives.R",local=T)
 
     #### Aesthetics ####
-    # All are reactive expressions, and they also need properly defined scales
-    # So we define both a reactive mapping, and a reactive scale
+    # All of the following return a *Mappting() and a *Scale() value
+    # to be used in plot
     
     ## Colour 
     source("./components/colorReactives.R",local=T)
@@ -262,37 +265,27 @@ server <- function(input, output, session) {
     ## Alpha
     source("./components/alphaReactives.R",local=T)
     
-#### 4) Misc outputs ####
-    
-    # State variables
-    #### Keep track of selected points ####
-    v <- reactiveValues(
-      # A sub-table that contains the samples currently selected
-      selectedData = NULL,
-    )
-    
-    # Count selected samples
-    selectedSamples <- reactive({ nrow(v$selectedData) })
-
+    #### Text outputs ####
+   
     ## Tag box title
     output$tagBoxTitle<-renderUI({
-      paste("Tag",selectedSamples(),"samples using:")
+      paste("Tag",selectedSamplesCount(),"samples using:")
     })
-    
-    ## Controller for the tagging UI
-    output$showTagBox <- reactive({ as.character(selectedSamples()>0) })
-    outputOptions(output, 'showTagBox', suspendWhenHidden = FALSE)
-    
-    #### Title bar ####
+
+    ## Graph title bar
     output$sampleInfo<-renderText({
       paste("Full dataset:",nrow(the_data),
-            "; filtered:",nrow(dataLive() ),
-            "; selected:",selectedSamples() )
+            "; filtered:",nrow(plottingData() ),
+            "; selected:",selectedSamplesCount() )
     })
 
     #### Tags ####
     # Most of the tag work is done only upon clicking the button !
-
+    
+    ## Controller for the tagging UI
+    output$showTagBox <- reactive({ as.character(selectedSamplesCount()>0) })
+    outputOptions(output, 'showTagBox', suspendWhenHidden = FALSE)
+    
     observeEvent(input$tag_do,{
       # See if the column exists
       # browser()
@@ -303,16 +296,35 @@ server <- function(input, output, session) {
       # housekeeping (taglist etc)
       
       # update the input widgets to reflect these changes
+      # in particuar all the aesthetic ones !
+      # also the ones for tagging
       
     })
     
     
 #### 5) The plot ####
+    
+    #### Generate the table actually used for plotting, by gathering various info ####
+    ## We create a "live" version of the data table with any extra info we may need
+    plottingData<-reactive({
+      
+      # Initialize (full ds)  
+      current_data <- the_data
+      
+      # Filter the data based on filter input - if legal; otherwise do nothing.
+      try(
+        current_data <- the_data %>% filter(!!rlang::parse_expr(input$filterPattern)),
+        silent=T
+      )
+      
+      return(current_data)
+    }) 
 
+    #### The plot proper (here a binary plot) ####
     output$binPlot <- renderPlot({
 
         # Build the plot
-        p <- dataLive() %>% ggplot()+
+        p <- plottingData() %>% ggplot()+
             geom_point(aes(x=!!rlang::parse_expr(input$X),
                            y=!!rlang::parse_expr(input$Y),
                            color=!!colorMapping(),
@@ -363,20 +375,16 @@ server <- function(input, output, session) {
         } else { (session$clientData$output_binPlot_width)*(7/16) }}
   )
 
-    #### 6) User interaction ####
+    #### Interaction with the plot ####
 
-
-    
     #### Keep track of the last brush rectangle ####
-    # NB- because the brush is reset with each graph redraw !
-    # Which we cannot really avoid least we have ghost rectangles floating around...
-    
+     
     lastBrush <- reactiveValues(x = NULL, y = NULL)
     
     observeEvent(input$binPlot_brush, {
 
       ## Keep track of selected points
-      v$selectedData <- brushedPoints(dataLive(),input$binPlot_brush,allRows=F)
+      v$selectedData <- brushedPoints(plottingData(),input$binPlot_brush,allRows=F)
       
      ## Keep track of rectangle size
       if (!is.null(input$binPlot_brush)) {
@@ -403,7 +411,8 @@ server <- function(input, output, session) {
       # pass
       # this has the side effect of clearing the brush !
     })
-    
+   
+    ## Add some hover code here ! 
     
     highlights<-reactive({
       if(is.null(v$selectedData)){return(NULL)}
