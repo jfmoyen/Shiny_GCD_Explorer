@@ -9,11 +9,13 @@ facetDefinitionUI <- selectizeInput("facet_by",
                options = list(create = TRUE))
 
 
-facetSplitUI <-conditionalPanel(
-  condition = makeJSConditionString("facet_by",c(discrete,"nothing"),negate=T), # For variables that are NOT discrete
-  textInput("splitter",
-            "Break points (separated by ;)",
-            value="")
-)
+facetSplitUI<-uiOutput("facetSplitValuesUI")
+
+# facetSplitUI <-conditionalPanel(
+#   condition = makeJSConditionString("facet_by",c(discrete,"nothing"),negate=T), # For variables that are NOT discrete
+#   textInput("splitter",
+#             "Break points (separated by ;)",
+#             value="")
+# )
 
 cat("..done\n")

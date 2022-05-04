@@ -10,7 +10,7 @@ alphaScale<-reactive({
   if(input$alpha_literal || input$alpha_by=="nothing"){
     retval <- scale_alpha_identity(guide="none")
   }else{
-    if(input$alpha_by %in% discrete){
+    if(input$alpha_by %in% metaData$discreteVariables ){
       retval <- scale_alpha_discrete(range=input$alpha_rng)
     }else{ # surely if it's not a continuous variable, its a discrete one...
       retval <- scale_alpha_continuous(range=input$alpha_rng)

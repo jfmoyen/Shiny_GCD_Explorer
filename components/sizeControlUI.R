@@ -6,7 +6,7 @@ sizeMappingUI<-fluidRow(
   column(8,
          selectizeInput("size_by",
                         "Size represents...",
-                        choices=c("nothing",continuous,discrete),
+                        choices=c("nothing",discrete,continuous),
                         selected="nothing",
                         options = list(create = TRUE))),
   

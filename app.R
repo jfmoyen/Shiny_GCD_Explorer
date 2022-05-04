@@ -54,14 +54,6 @@ continuous <- names(the_data)[sapply(the_data,is.numeric)]
 # mjrs <- c("SiO2", "Al2O3","TiO2","FeO","FeOt","MgO","Fe2O3","Fe2O3t","MnO","CaO","Na2O","K2O","P2O5")
 
 
-## Initial tagging conditions
-# A table (of the same shape as the whole dataset) with the user-defined tag columns
-userTags_0 <- tibble(user_tag1=rep(NA,nrow(the_data)) )
-
-# Keep a record of the latest selected tag, for convenience
-lastUsedTag_0 <- "user_tag1"
-lastUsedVal_0 <- "My value"
-
 #*************************#
 ####     UTILITIES     ####
 #*************************#
@@ -219,6 +211,14 @@ server <- function(input, output, session) {
     
   #### Manual override for the scale of the graph ####
   ranges <- reactiveValues(x = NULL, y = NULL)
+  
+  #### Some info on the data ####
+  metaData <- reactiveValues(
+    
+    # It is important to know that when we try to build scales
+    discreteVariables = discrete
+    
+  )
 
 #### 2) Reactive expressions - plumbing ####
   
@@ -258,10 +258,6 @@ server <- function(input, output, session) {
     })
 
     #### Tagging ####
-
-    #### Tags ####
-    ## Tag box title
-    
     source("./components/tagReactives.R",local=T)
     
 #### 5) The plot ####
@@ -273,12 +269,18 @@ server <- function(input, output, session) {
       # Initialize (full ds)  
       current_data <- the_data
       
+      # Add user tags
+      try(
+      current_data <- current_data %>% left_join(tagging$userTags,by="ID"),
+      silent=T
+      )
+      
       # Filter the data based on filter input - if legal; otherwise do nothing.
       try(
         current_data <- the_data %>% filter(!!rlang::parse_expr(input$filterPattern)),
         silent=T
       )
-      
+
       return(current_data)
     }) 
 
@@ -374,7 +376,7 @@ server <- function(input, output, session) {
       # this has the side effect of clearing the brush !
     })
    
-    ## Add some hover code here ! 
+    ## Add some hover code here ! ## TODO
     
     highlights<-reactive({
       if(is.null(dataProcessing$selectedData)){return(NULL)}

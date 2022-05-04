@@ -10,7 +10,7 @@ shapeScale<-reactive({
   if(input$pch_literal || input$shape_by=="nothing"){
     retval <- scale_shape_identity(guide="none")
   }else{
-    if(input$shape_by %in% discrete){
+    if(input$shape_by %in% metaData$discreteVariables ){
       retval <- scale_shape_discrete()
     }else{ # surely if it's not a continuous variable, its a discrete one...
       retval <- scale_shape_binned()

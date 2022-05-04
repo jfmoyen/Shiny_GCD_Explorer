@@ -12,6 +12,18 @@
 #' redrawing the graph twice (once because we changed the variable and once because we changed the split)
 
 
+## Conditional panel, with a proper R condition (reactive)
+
+output$facetSplitValuesUI <- renderUI({
+  
+  if(input$facet_by %in% c(metaData$discreteVariables,"nothing") ){return(NULL)}
+  
+  textInput("splitter",
+            "Break points (separated by ;)",
+            value="")
+  
+})
+  
 ## As a convenience, the actual data that will be split
 facetingData<-reactive({
   calcCoreTibble(the_data,input$facet_by)
@@ -35,7 +47,7 @@ faceting <- reactive({
     return(NULL)    
   }
   
-  if(input$facet_by %in% discrete){
+  if(input$facet_by %in% metaData$discreteVariables ){
     return( facet_wrap(vars(!!rlang::parse_expr(input$facet_by))) )
   }else{
     # Read the break points from the input
@@ -64,7 +76,7 @@ observeEvent(input$facet_by,
                # new values (and the rest of the reactive graph)    
                freezeReactiveValue(input, "splitter")
                
-               if( !(input$facet_by %in% discrete || input$facet_by=="nothing" ) ){
+               if( !(input$facet_by %in% metaData$discreteVariables || input$facet_by=="nothing" ) ){
                  updateTextInput(inputId = "splitter",
                                  value=paste(defaultSplit(),collapse=";"))
                }
