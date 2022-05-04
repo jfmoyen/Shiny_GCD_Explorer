@@ -163,8 +163,8 @@ ui <- fluidPage(
             
            ##### TAB 3 : DATA FILTERING AND TAGGING #####
            tabPanel("Filter",
-                filterPatternUI
-                #tagUI
+                filterPatternUI,
+                tagUI
                 )
 
             ) ### end of tabset
@@ -258,9 +258,8 @@ server <- function(input, output, session) {
     })
 
     #### Tagging ####
-
     source("./components/tagReactives.R",local=T)
-
+    
 #### 5) The plot ####
     
     #### Generate the table actually used for plotting, by gathering various info ####
