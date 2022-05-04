@@ -11,7 +11,7 @@ colorScale<-reactive({
     retval <- scale_color_identity(guide="none")
   }else{
     if(!input$col_literal){
-      if(input$color_by %in% discrete){
+      if(input$color_by %in% metaData$discreteVariables ){
         retval <- scale_color_discrete()
       }else{ # surely if it's not a continuous variable, its a discrete one...
         retval <- scale_color_viridis_c()
