@@ -11,6 +11,11 @@ library(readxl)
 reactlog::reactlog_enable()
 #reactiveConsole(TRUE) # For inline experiments, not real debugging...
 
+
+### TODO - brush crashes when trying to brush on a graph with fabricated variables ("K2O/Na2O")
+# Be more explicit with actions of click/dbl clic
+# Filtering does not work ??? 
+
 #*************************#
 ####     DATA PREP     ####
 #*************************#
@@ -346,7 +351,7 @@ server <- function(input, output, session) {
     lastBrush <- reactiveValues(x = NULL, y = NULL)
     
     observeEvent(input$binPlot_brush, {
-
+browser()
       ## Keep track of selected points
       dataProcessing$selectedData <- brushedPoints(plottingData(),input$binPlot_brush,allRows=F)
       
