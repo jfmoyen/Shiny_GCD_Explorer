@@ -14,14 +14,18 @@ reactlog::reactlog_enable()
 
 ### TODO 
 # Be more explicit with actions of click/dbl clic
-# Filtering does not work ??? 
+# Allow force scale to zero
+
 
 #*************************#
 ####     DATA PREP     ####
 #*************************#
+#*# MUST have a col called ID !!
+
 # Read file
 the_data <- read_delim("atacazo.txt", delim = "\t",
-                      escape_double = FALSE, trim_ws = TRUE)
+                      escape_double = FALSE, trim_ws = TRUE) %>%
+            rename(ID = Sample)  
 the_name <- "Atacazo"
 
 # the_data <- read_excel("Classif_Var_LFB_NA.xlsx",.name_repair="universal") %>% 
@@ -274,8 +278,7 @@ server <- function(input, output, session) {
       # Initialize (full ds)  
       current_data <- the_data
       
-      # Add user-generated data (xdata, ydata)
-
+      # Add current graph physical coordinates (xdata, ydata)
       try(
         current_data <- mutate(current_data,
                                xdata = !!rlang::parse_expr(input$X),
@@ -289,9 +292,8 @@ server <- function(input, output, session) {
       )
       
       # Filter the data based on filter input - if legal; otherwise do nothing.
-      # shoudn't this be current_data instead of the_data ?
       try(
-        current_data <- the_data %>% filter(!!rlang::parse_expr(input$filterPattern)),
+        current_data <- current_data %>% filter(!!rlang::parse_expr(input$filterPattern)),
         silent=T
       )
 

@@ -29,7 +29,7 @@ tagging <- reactiveValues(
   # A table (of the same length as the whole dataset) with the user-defined tag columns
   userTags =  tibble(ID=the_data$ID),
 
-  # Keep a record of the latest selected tag (and last-used value), for convenience
+  # Keep a record of the latest selected tag (and last-used value)
   lastUsedTag = "user_tag1",
   lastUsedVal = "My value",
 
@@ -46,8 +46,12 @@ isValidTag <- reactive({
 
 ## Functions
 updateTagTable<-function(tagTable,requiredField, requiredVal, selectedData){
-
-  tagTable[selectedData$ID,requiredField]<-requiredVal
+#browser()
+  #tagTable[selectedData$ID,requiredField]<-requiredVal
+  inserted_values <- select(selectedData,ID) %>% 
+                  add_column(!!(requiredField) := requiredVal)
+  
+  tagTable <- rows_update(tagTable,inserted_values,by="ID")
   
   return(tagTable)
   }
@@ -56,7 +60,7 @@ addTag <- function(newTag){
   # When we create a tag we must update in all sort of places !
   
   # Add to the tag table
-  tagging$userTags <- add_column(tagging$userTags,!!(newTag) := NA)
+  tagging$userTags <- add_column(tagging$userTags,!!(newTag) := "")
 
   # Add to the select lists
   tagging$by_variables <- c(tagging$by_variables,newTag)
@@ -64,21 +68,55 @@ addTag <- function(newTag){
   # Add to the discrete variables
   metaData$discreteVariables <- c(metaData$discreteVariables,newTag)
 
-  # Update the tag widget
-  updateSelectizeInput(inputId="tag_col",
-                          choices=setdiff(names(tagging$userTags),"ID") )
+  # Update the tag widgets
+  # updateSelectizeInput(inputId="tag_col",
+  #                         choices=setdiff(names(tagging$userTags),"ID") )
 
+  updateSelectizeInput(inputId="tag_val",
+                       choices = lastUsedVal_0,
+                       selected = lastUsedVal_0 )
+
+  # updateTagValuesWidget()
+  
   # update the input widgets to reflect these changes
   widgetsToUpdate <- c("color_by","shape_by","size_by","facet_by")
 
   .updateW <- function(thewidget){
+    # Record current selection
+    curr_sel <- input[[thewidget]]
+    
+    # Update
     updateSelectizeInput(inputId=thewidget,
-                            choices=tagging$by_variables)
+                            choices=tagging$by_variables,
+                            selected=curr_sel)
 
   }
 
   walk(widgetsToUpdate,.updateW)
+  
 }
+
+updateTagValuesWidget <- function(){
+  # Update the widget with tag values to reflect what currently exists, 
+  # and the latest selected value
+  
+  # What hav we got in the column ?
+  alreadyInCol <- unique(tagging$userTags[[input$tag_col]])
+
+  if(length(alreadyInCol) > 0){
+    updateSelectizeInput(inputId="tag_val",
+                         choices=alreadyInCol)
+    if(tagging$lastUsedVal %in% alreadyInCol){
+      updateSelectizeInput(inputId="tag_val",
+                           selected=tagging$lastUsedVal)
+    }
+  }else{
+    updateSelectizeInput(inputId="tag_val",
+                         choices=lastUsedVal_0)
+  }
+  
+}
+
 
 ## Observers (one-shot)
 
@@ -112,20 +150,38 @@ observeEvent(input$tag_do,{
   ## housekeeping (last used values)
   tagging$lastUsedTag <- requiredField
   tagging$lastUsedVal <- requiredVal
+  
+  updateSelectizeInput(inputId="tag_col",selected=requiredField)
+  updateTagValuesWidget()
+  updateSelectizeInput(inputId="tag_val",selected=requiredVal)
+  
 
 })
 
 # If we change the tag col we must re-populate the list of existing tags...
 observeEvent(input$tag_col,{
 
+ # cat("repopulating tags for",input$tag_col,"...\n")
   if(isValidTag() ){
     shinyjs::enable("tag_do")
-    alreadyInCol <- unique(tagging$userTags[[input$tag_col]])
     
-    if(length(alreadyInCol) > 0){
-      updateSelectizeInput(inputId="tag_val",
-                           choices=alreadyInCol)
-    }
+    updateTagValuesWidget()
+    # alreadyInCol <- unique(tagging$userTags[[input$tag_col]])
+    # cat("found in col:",alreadyInCol,"\n")
+    # 
+    # if(length(alreadyInCol) > 0){
+    #   updateSelectizeInput(inputId="tag_val",
+    #                        choices=alreadyInCol)
+    #   cat("populating tag_val\n")
+    #   if(tagging$lastUsedVal %in% alreadyInCol){
+    #     updateSelectizeInput(inputId="tag_val",
+    #                          selected=tagging$lastUsedVal)
+    #     cat("adding",tagging$lastUsedVal,"\n")
+    #   }
+    # }else{
+    #   updateSelectizeInput(inputId="tag_val",
+    #                        choices=lastUsedVal_0)
+    # }
   
   }else{
     shinyjs::disable("tag_do")
