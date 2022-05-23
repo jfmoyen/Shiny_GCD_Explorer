@@ -12,7 +12,7 @@ reactlog::reactlog_enable()
 #reactiveConsole(TRUE) # For inline experiments, not real debugging...
 
 
-### TODO - brush crashes when trying to brush on a graph with fabricated variables ("K2O/Na2O")
+### TODO 
 # Be more explicit with actions of click/dbl clic
 # Filtering does not work ??? 
 
@@ -20,17 +20,17 @@ reactlog::reactlog_enable()
 ####     DATA PREP     ####
 #*************************#
 # Read file
-# the_data <- read_delim("atacazo.txt", delim = "\t", 
-#                       escape_double = FALSE, trim_ws = TRUE)
-# the_name <- "Atacazo"
+the_data <- read_delim("atacazo.txt", delim = "\t",
+                      escape_double = FALSE, trim_ws = TRUE)
+the_name <- "Atacazo"
 
-the_data <- read_excel("Classif_Var_LFB_NA.xlsx",.name_repair="universal") %>% 
-  sample_frac(1/10) %>% 
-  rowid_to_column("ID") 
-  
+# the_data <- read_excel("Classif_Var_LFB_NA.xlsx",.name_repair="universal") %>% 
+#   sample_frac(1/10) %>% 
+#   rowid_to_column("ID") 
+#   
+# the_name <- "Granites Jacob et al. 21"
 
 
-the_name <- "Granites Jacob et al. 21"
 ## Names are replaced by "syntaxic" names. This is a hassle for A/CNK etc but makes life generally easier
 # Another (best?) way would be to backtick every selection (with paste() ... )
 # But how would that play out with calculated values ? Badly, I think.
@@ -274,6 +274,14 @@ server <- function(input, output, session) {
       # Initialize (full ds)  
       current_data <- the_data
       
+      # Add user-generated data (xdata, ydata)
+
+      try(
+        current_data <- mutate(current_data,
+                               xdata = !!rlang::parse_expr(input$X),
+                               ydata = !!rlang::parse_expr(input$Y))
+      )
+      
       # Add user tags
       try(
       current_data <- current_data %>% left_join(tagging$userTags,by="ID"),
@@ -281,6 +289,7 @@ server <- function(input, output, session) {
       )
       
       # Filter the data based on filter input - if legal; otherwise do nothing.
+      # shoudn't this be current_data instead of the_data ?
       try(
         current_data <- the_data %>% filter(!!rlang::parse_expr(input$filterPattern)),
         silent=T
@@ -351,9 +360,16 @@ server <- function(input, output, session) {
     lastBrush <- reactiveValues(x = NULL, y = NULL)
     
     observeEvent(input$binPlot_brush, {
-browser()
+      # ?brushedPoints
+      # For plots created with ggplot2, it is not necessary to specify the column names to xvar, yvar, panelvar1, and panelvar2 as that information can be automatically derived from the plot specification.
+      # 
+      # Note, however, that this will not work if you use a computed column, like aes(speed/2, dist)). Instead, we recommend that you modify the data first, and then make the plot with "raw" columns in the modified data.
+      # 
       ## Keep track of selected points
-      dataProcessing$selectedData <- brushedPoints(plottingData(),input$binPlot_brush,allRows=F)
+      dataProcessing$selectedData <- brushedPoints(plottingData(),
+                                                   input$binPlot_brush,
+                                                   xvar="xdata",yvar="ydata",
+                                                   allRows=F)
       
      ## Keep track of rectangle size
       if (!is.null(input$binPlot_brush)) {
